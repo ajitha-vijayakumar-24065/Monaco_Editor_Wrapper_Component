@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monaco Editor Wrapper — Playground</title>
+  <link rel="stylesheet" href="demo.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── Top Bar ─────────────────────────────────────────────────────────────── -->
+  <header id="topbar">
+    <div class="topbar-brand">
+      <!-- Code editor icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+      </svg>
+      Monaco Wrapper
+    </div>
+
+    <div class="topbar-controls">
+      <!-- Language selector -->
+      <label for="lang-select">Language</label>
+      <select id="lang-select" title="Select editor language">
+        <option value="javascript" selected>JavaScript</option>
+        <option value="typescript">TypeScript</option>
+        <option value="json">JSON</option>
+        <option value="sql">SQL</option>
+        <option value="python">Python</option>
+        <option value="html">HTML</option>
+        <option value="css">CSS</option>
+        <option value="yaml">YAML</option>
+        <option value="markdown">Markdown</option>
+        <option value="plaintext">Plain Text</option>
+      </select>
+
+      <!-- Font size quick control -->
+      <label for="topbar-fontsize">Font</label>
+      <input type="number" id="topbar-fontsize" value="14" min="8" max="40"
+             style="width:58px" title="Font size" />
+    </div>
+
+    <!-- Quick action buttons in top bar -->
+    <div class="topbar-controls" style="flex:0 0 auto">
+      <button class="mw-toolbar-btn" id="tbtn-undo" title="Undo (Ctrl+Z)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+        Undo
+      </button>
+      <button class="mw-toolbar-btn" id="tbtn-redo" title="Redo (Ctrl+Y)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
+        Redo
+      </button>
+      <button class="mw-toolbar-btn" id="tbtn-format" title="Format (Shift+Alt+F)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>
+        Format
+      </button>
+      <button class="mw-toolbar-btn" id="tbtn-find" title="Find (Ctrl+F)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Find
+      </button>
+      <button class="mw-toolbar-btn" id="tbtn-wordwrap" title="Toggle Word Wrap (Alt+Z)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M3 12h15a3 3 0 0 1 0 6h-4"/><polyline points="16 16 14 18 16 20"/></svg>
+        Wrap
+      </button>
+      <button class="mw-toolbar-btn" id="tbtn-theme" title="Toggle Dark/Light Theme">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        Theme
+      </button>
+    </div>
+
+    <div class="topbar-spacer"></div>
+    <div class="topbar-badge">v0.21.3</div>
+  </header>
+
+  <!-- ── Main Area ────────────────────────────────────────────────────────────── -->
+  <main id="main">
+
+    <!-- LEFT: Editor column -->
+    <div id="editor-column">
+      <!-- Toolbar + Monaco Editor injected here by MonacoWrapper -->
+      <div id="editor-container" style="flex:1;min-height:0;"></div>
+
+      <!-- Status bar -->
+      <div id="status-bar">
+        <span id="status-lang">JavaScript</span>
+        <span class="status-sep">|</span>
+        <span id="status-pos">Ln 1, Col 1</span>
+        <span class="status-sep">|</span>
+        <span id="status-sel"></span>
+      </div>
+
+      <!-- Log area -->
+      <div id="log-area">
+        <div id="log-area-header">
+          Callback Log
+          <button id="btn-clear-log" title="Clear log">Clear</button>
+        </div>
+        <ul id="log-list"></ul>
+      </div>
+    </div>
+
+    <!-- RIGHT: Properties Panel -->
+    <aside id="props-panel">
+      <div id="props-panel-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+        </svg>
+        Properties Panel
+      </div>
+
+      <div id="props-scroll">
+
+        <!-- ── Section: Content ─────────────────────────────────────────── -->
+        <div class="props-section">
+          <div class="props-section-title">Content</div>
+
+          <div class="field">
+            <label for="prop-value">Value (initial content)</label>
+            <textarea id="prop-value" rows="4" placeholder="Leave blank to keep current content"></textarea>
+            <div class="field-hint">Paste new content here, then click Apply Changes.</div>
+          </div>
+
+          <div class="field">
+            <label for="prop-language">Language</label>
+            <select id="prop-language">
+              <option value="javascript" selected>JavaScript</option>
+              <option value="typescript">TypeScript</option>
+              <option value="json">JSON</option>
+              <option value="sql">SQL</option>
+              <option value="python">Python</option>
+              <option value="html">HTML</option>
+              <option value="css">CSS</option>
+              <option value="yaml">YAML</option>
+              <option value="markdown">Markdown</option>
+              <option value="plaintext">Plain Text</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ── Section: Appearance ──────────────────────────────────────── -->
+        <div class="props-section">
+          <div class="props-section-title">Appearance</div>
+
+          <div class="field">
+            <label for="prop-theme">Theme</label>
+            <select id="prop-theme">
+              <option value="vs">Light (vs)</option>
+              <option value="vs-dark">Dark (vs-dark)</option>
+              <option value="hc-black">High Contrast (hc-black)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="prop-fontSize">Font Size (px)</label>
+            <input type="number" id="prop-fontSize" value="14" min="8" max="40" />
+          </div>
+
+          <div class="field">
+            <label for="prop-lineNumbers">Line Numbers</label>
+            <select id="prop-lineNumbers">
+              <option value="on" selected>On</option>
+              <option value="off">Off</option>
+              <option value="relative">Relative</option>
+              <option value="interval">Interval</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="prop-wordWrap">Word Wrap</label>
+            <select id="prop-wordWrap">
+              <option value="off" selected>Off</option>
+              <option value="on">On</option>
+              <option value="wordWrapColumn">Word Wrap Column</option>
+              <option value="bounded">Bounded</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="prop-matchBrackets">Bracket Matching</label>
+            <select id="prop-matchBrackets">
+              <option value="always" selected>Always</option>
+              <option value="near">Near</option>
+              <option value="never">Never</option>
+            </select>
+            <div class="field-hint">Note: v0.21.3 uses string enum (not boolean).</div>
+          </div>
+
+          <div class="field-inline">
+            <input type="checkbox" id="prop-minimap" checked />
+            <label for="prop-minimap">Show Minimap</label>
+          </div>
+        </div>
+
+        <!-- ── Section: Behavior ────────────────────────────────────────── -->
+        <div class="props-section">
+          <div class="props-section-title">Behavior</div>
+
+          <div class="field">
+            <label for="prop-tabSize">Tab Size</label>
+            <input type="number" id="prop-tabSize" value="4" min="1" max="8" />
+          </div>
+
+          <div class="field-inline">
+            <input type="checkbox" id="prop-formatOnType" />
+            <label for="prop-formatOnType">Format on Type</label>
+          </div>
+
+          <div class="field-inline">
+            <input type="checkbox" id="prop-readOnly" />
+            <label for="prop-readOnly">Read Only</label>
+          </div>
+        </div>
+
+        <!-- ── Section: Intelligence ────────────────────────────────────── -->
+        <div class="props-section">
+          <div class="props-section-title">Intelligence</div>
+
+          <div class="field">
+            <label for="prop-suggestions">Custom Auto-Suggestions (JSON array)</label>
+            <textarea id="prop-suggestions" rows="5"
+              placeholder='[{"label":"myFunc","detail":"My helper","insertText":"myFunc()","kind":"function"}]'></textarea>
+            <div class="field-hint">
+              Array of <code>{ label, detail, insertText, kind, documentation? }</code>.
+              Applied to the current language.
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Section: Validation ──────────────────────────────────────── -->
+        <div class="props-section">
+          <div class="props-section-title">Validation</div>
+
+          <div class="field">
+            <label for="prop-validationFn">Validation Function Body</label>
+            <textarea id="prop-validationFn" rows="6"
+              placeholder="// function body receives (value)\n// must return an array of error objects\n// Example:\nvar errors = [];\nvar lines = value.split('\n');\nlines.forEach(function(line, i) {\n  if (line.length > 80) {\n    errors.push({\n      startLineNumber: i + 1, startColumn: 81,\n      endLineNumber: i + 1, endColumn: line.length + 1,\n      message: 'Line exceeds 80 chars',\n      severity: 'warning'\n    });\n  }\n});\nreturn errors;"></textarea>
+            <div class="field-hint">
+              Paste a function body. The function receives <code>value</code> (string) and
+              returns <code>Array&lt;{ startLineNumber, startColumn, endLineNumber, endColumn, message, severity? }&gt;</code>.
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary" id="btn-clear-validation" title="Remove validation function and clear markers"
+              onclick="if(window._wrapper) window._wrapper.clearValidation()">
+              Clear Validation
+            </button>
+            <button class="btn btn-secondary" id="btn-clear-markers" title="Clear error markers"
+              onclick="if(window._wrapper) window._wrapper.clearMarkers()">
+              Clear Markers
+            </button>
+          </div>
+        </div>
+
+        <!-- ── Section: Toolbar ─────────────────────────────────────────── -->
+        <div class="props-section">
+          <div class="props-section-title">Toolbar Buttons</div>
+          <div class="toolbar-toggles" id="toolbar-toggles">
+            <!-- Populated by demo.js buildToolbarToggles() -->
+          </div>
+        </div>
+
+        <!-- ── Section: Shortcuts ───────────────────────────────────────── -->
+        <div class="props-section">
+          <div class="props-section-title">Shortcuts</div>
+          <div class="field-hint" style="margin-bottom:4px">
+            A demo shortcut <strong>Ctrl+Shift+L</strong> is pre-registered — it logs the current
+            value length to the Callback Log.
+          </div>
+          <div class="field-hint">
+            Use <code>wrapper.addShortcut()</code> programmatically to add more.
+          </div>
+        </div>
+
+        <!-- ── Section: Advanced / Demo Actions ─────────────────────────── -->
+        <div class="props-section">
+          <div class="props-section-title">Demo Actions</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+
+            <button class="btn btn-secondary" id="btn-reset-editor">
+              Reset Content
+            </button>
+
+            <button class="btn btn-secondary" id="btn-reinit">
+              Re-initialize Editor
+            </button>
+
+            <button class="btn btn-secondary"
+              onclick="if(window._wrapper){var v=window._wrapper.getValue();window._wrapper.setValue(v.toUpperCase());}">
+              Value → UPPERCASE
+            </button>
+
+            <button class="btn btn-secondary"
+              onclick="if(window._wrapper){window._wrapper.setMarkers([{startLineNumber:1,startColumn:1,endLineNumber:1,endColumn:10,message:'Example error marker',severity:'error'},{startLineNumber:2,startColumn:1,endLineNumber:2,endColumn:10,message:'Example warning',severity:'warning'}]);}">
+              Add Demo Markers
+            </button>
+
+            <button class="btn btn-secondary"
+              onclick="if(window._wrapper){window._wrapper.registerSuggestions(window._wrapper.getLanguage(),[{label:'demoSuggest',detail:'Demo custom suggestion',insertText:'demoSuggest()',kind:'function'}]);alert('Custom suggestion registered! Type \"demo\" in the editor.');}">
+              Add Demo Suggestion
+            </button>
+
+            <button class="btn btn-secondary"
+              onclick="if(window._wrapper){window._wrapper.setCustomTokenColors([{token:'keyword',foreground:'ff6b6b'},{token:'string',foreground:'51cf66'},{token:'comment',foreground:'868e96',fontStyle:'italic'}]);alert('Custom token colors applied!');}">
+              Custom Token Colors
+            </button>
+
+          </div>
+        </div>
+
+      </div><!-- /#props-scroll -->
+
+      <!-- Footer: Apply Changes -->
+      <div id="props-footer">
+        <button class="btn btn-primary btn-full" id="btn-apply">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Apply Changes
+        </button>
+      </div>
+
+    </aside><!-- /#props-panel -->
+
+  </main><!-- /#main -->
+
+</div><!-- /#app -->
+
+<!-- ── Scripts ─────────────────────────────────────────────────────────────── -->
+
+<!--
+  Monaco Editor loaded via AMD (CDN).
+  The require() call below loads monaco and then bootstraps all our scripts.
+  All our scripts are loaded INSIDE the require callback so that window.monaco
+  is guaranteed to be available when they execute.
+-->
+<script>
+  // 1. Set up Monaco's AMD loader environment (required for web workers)
+  var MONACO_VERSION = '0.21.3';
+  var MONACO_BASE    = 'https://cdn.jsdelivr.net/npm/monaco-editor@' + MONACO_VERSION + '/min/vs';
+
+  window.MonacoEnvironment = {
+    getWorkerUrl: function (workerId, label) {
+      // Cross-origin worker proxy blob
+      var workerPath;
+      if (label === 'json') {
+        workerPath = MONACO_BASE + '/language/json/jsonWorker.js';
+      } else if (label === 'css' || label === 'scss' || label === 'less') {
+        workerPath = MONACO_BASE + '/language/css/cssWorker.js';
+      } else if (label === 'html' || label === 'handlebars' || label === 'razor') {
+        workerPath = MONACO_BASE + '/language/html/htmlWorker.js';
+      } else if (label === 'typescript' || label === 'javascript') {
+        workerPath = MONACO_BASE + '/language/typescript/tsWorker.js';
+      } else {
+        workerPath = MONACO_BASE + '/editor/editor.worker.js';
+      }
+
+      // Use a blob worker to avoid cross-origin issues
+      return 'data:text/javascript;charset=utf-8,' + encodeURIComponent(
+        'importScripts("' + workerPath + '");'
+      );
+    }
+  };
+</script>
+
+<!-- Monaco AMD loader -->
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.21.3/min/vs/loader.js"></script>
+
+<script>
+  // 2. Configure and load Monaco, then our wrapper scripts
+  require.config({
+    paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.21.3/min/vs' }
+  });
+
+  require(['vs/editor/editor.main'], function () {
+    // Monaco is now available as window.monaco
+
+    // Helper: load a script tag and call cb when done
+    function loadScript(src, cb) {
+      var s    = document.createElement('script');
+      s.src    = src;
+      s.async  = false;
+      s.onload = cb || function () {};
+      s.onerror = function () { console.error('[loader] Failed to load script:', src); };
+      document.head.appendChild(s);
+    }
+
+    // Load all wrapper modules in dependency order, then boot the playground
+    var scripts = [
+      '../src/constants.js',
+      '../src/ThemeManager.js',
+      '../src/SuggestionManager.js',
+      '../src/ValidationManager.js',
+      '../src/KeybindingManager.js',
+      '../src/ToolbarManager.js',
+      '../src/MonacoWrapper.js',
+      'demo.js'
+    ];
+
+    var idx = 0;
+    function loadNext() {
+      if (idx >= scripts.length) {
+        // All scripts loaded — init the playground
+        if (typeof window.initPlayground === 'function') {
+          window.initPlayground();
+        } else {
+          console.error('[loader] initPlayground not found after loading demo.js');
+        }
+        return;
+      }
+      loadScript(scripts[idx++], loadNext);
+    }
+    loadNext();
+  });
+</script>
+
+<!-- Patch: demo.js needs to expose wrapper for inline button onclick handlers -->
+<script>
+  // demo.js calls window.__setWrapper(wrapper) after each editor (re-)creation.
+  window.__setWrapper = function (w) {
+    window._wrapper = w;
+    var el = document.getElementById('status-lang');
+    if (el && w) el.textContent = w.getLanguage();
+  };
+</script>
+
+</body>
+</html>
