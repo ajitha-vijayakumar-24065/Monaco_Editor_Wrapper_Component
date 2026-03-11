@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Monaco Editor Wrapper — Playground</title>
   <link rel="stylesheet" href="demo.css" />
+  <link rel="stylesheet" href="live-preview.css" />
 </head>
 <body>
 
@@ -18,7 +19,7 @@
            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
       </svg>
-      Monaco Wrapper
+      Unitix - Editor One
     </div>
 
     <div class="topbar-controls">
@@ -69,6 +70,10 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         Theme
       </button>
+      <button class="mw-toolbar-btn" id="tbtn-preview" title="Live Preview (Ctrl+Shift+P)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Preview
+      </button>
     </div>
 
     <div class="topbar-spacer"></div>
@@ -78,8 +83,16 @@
   <!-- ── Main Area ────────────────────────────────────────────────────────────── -->
   <main id="main">
 
-    <!-- LEFT: Editor column -->
+    <!-- FAR LEFT: File Panel -->
+    <aside id="file-panel">
+      <!-- FilePanel renders itself here -->
+    </aside>
+
+    <!-- MIDDLE: Editor column -->
     <div id="editor-column">
+      <!-- Tab bar (rendered by TabBar) -->
+      <div id="tab-bar"></div>
+
       <!-- Toolbar + Monaco Editor injected here by MonacoWrapper -->
       <div id="editor-container" style="flex:1;min-height:0;"></div>
 
@@ -139,6 +152,20 @@
               <option value="plaintext">Plain Text</option>
             </select>
           </div>
+        </div>
+
+        <!-- ── Section: File View ────────────────────────────────────────── -->
+        <div class="props-section">
+          <div class="props-section-title">File View</div>
+
+          <div class="field">
+            <label for="prop-fv-visible">Show File Panel</label>
+            <label class="toggle-label">
+              <input type="checkbox" id="prop-fv-visible" checked />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+
         </div>
 
         <!-- ── Section: Appearance ──────────────────────────────────────── -->
@@ -219,15 +246,97 @@
         <div class="props-section">
           <div class="props-section-title">Intelligence</div>
 
-          <div class="field">
-            <label for="prop-suggestions">Custom Auto-Suggestions (JSON array)</label>
-            <textarea id="prop-suggestions" rows="5"
-              placeholder='[{"label":"myFunc","detail":"My helper","insertText":"myFunc()","kind":"function"}]'></textarea>
-            <div class="field-hint">
-              Array of <code>{ label, detail, insertText, kind, documentation? }</code>.
-              Applied to the current language.
-            </div>
+          <!-- Drop zone (multi-file upload) -->
+          <div id="sg-drop-zone" class="sg-drop-zone">
+            <span id="sg-drop-label">Drop files here or click to browse</span>
+            <div style="font-size:10px;opacity:0.6;margin-top:4px">.js .ts .json .css .sql .yaml .txt .md …</div>
+            <input id="sg-file-input" type="file" multiple style="display:none"
+              accept=".js,.ts,.jsx,.tsx,.mjs,.json,.css,.scss,.less,.sql,.yaml,.yml,.env,.md,.markdown,.txt" />
           </div>
+          <div id="sg-drop-warning" style="display:none;font-size:11px;color:var(--clr-error,#e05252);margin-top:2px"></div>
+
+          <!-- Paste blocks -->
+          <div class="field" style="margin-top:6px">
+            <label>Or Paste Source Text</label>
+            <div id="sg-paste-blocks">
+              <div class="sg-paste-block" data-paste-id="paste-0">
+                <div class="sg-paste-block-header">
+                  <input type="text" class="sg-paste-label" placeholder="Label (optional)" />
+                  <select class="sg-paste-lang">
+                    <option value="">Auto-detect</option>
+                    <option value="js">JS / TS</option>
+                    <option value="json">JSON</option>
+                    <option value="css">CSS / SCSS</option>
+                    <option value="sql">SQL</option>
+                    <option value="yaml">YAML / ENV</option>
+                    <option value="text">Plain Text / MD</option>
+                  </select>
+                  <button class="btn btn-secondary sg-paste-remove" title="Remove paste block">×</button>
+                </div>
+                <textarea class="sg-paste-text" rows="3" placeholder="Paste content here (JS, JSON, CSS, SQL, YAML…)"></textarea>
+              </div>
+            </div>
+            <button class="btn btn-secondary" id="sg-add-paste-btn"
+              style="margin-top:4px;font-size:11px;padding:4px 10px">+ Add Paste Block</button>
+          </div>
+
+          <!-- Source list -->
+          <div id="sg-source-list"></div>
+
+          <!-- Merge summary -->
+          <div id="sg-merge-summary" class="sg-merge-summary" style="display:none"></div>
+
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" id="sg-generate-btn">Generate Suggestions</button>
+            <button class="btn btn-secondary" id="sg-clear-suggestions-btn" style="display:none">Clear All</button>
+          </div>
+
+          <!-- Editable JSON preview (nested Monaco editor) -->
+          <div class="sg-editor-toolbar" id="sg-editor-toolbar" style="display:none">
+            <button class="btn btn-secondary" id="sg-fmt-btn" title="Re-format JSON">Format</button>
+            <button class="btn btn-secondary" id="sg-reset-btn" title="Revert to generated output">Reset</button>
+            <button class="btn btn-secondary" id="sg-clear-editor-btn" title="Empty the editor">Clear</button>
+            <button class="btn btn-secondary" id="sg-copy-btn" title="Copy to clipboard">Copy</button>
+            <button class="btn btn-secondary" id="sg-add-item-btn" title="Append a blank suggestion">+ Item</button>
+          </div>
+          <div id="sg-editor-wrap" class="sg-editor-wrap" style="display:none"></div>
+          <div id="sg-validation-bar" class="sg-validation-bar" style="display:none"></div>
+          <div id="sg-editor-status" style="display:none;font-size:11px;color:var(--clr-text-muted);margin-top:2px"></div>
+          <div id="sg-unapplied-indicator" style="display:none;font-size:11px;color:#f59e0b;margin-top:2px">⚠ Unapplied changes</div>
+          <button class="btn btn-primary" id="sg-apply-btn"
+            style="display:none;margin-top:8px;width:100%">Apply to Editor</button>
+
+          <!-- Manual JSON fallback -->
+          <details style="margin-top:12px">
+            <summary style="font-size:11px;cursor:pointer;user-select:none;opacity:0.7">Manual JSON input (legacy)</summary>
+            <div class="field" style="margin-top:6px">
+              <textarea id="prop-suggestions" rows="4"
+                placeholder='[{"label":"myFunc","detail":"My helper","insertText":"myFunc()","kind":"function"}]'></textarea>
+              <div class="field-hint">
+                Array of <code>{ label, detail, insertText, kind, documentation? }</code>.
+                Valid kinds: <code>function</code>, <code>method</code>, <code>class</code>, <code>variable</code>, <code>constant</code>, <code>property</code>, <code>module</code>, <code>keyword</code>, and more.
+                Applied via the Apply Changes button below.
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <!-- ── Section: Libraries ──────────────────────────────────── -->
+        <div class="props-section">
+          <div class="props-section-title">Libraries</div>
+          <div style="font-size:10px;opacity:0.65;margin-bottom:6px">Upload a JS library to inject its API as TypeScript declarations.
+            After loading, type <code>LibName.</code> in the editor to get member completions.</div>
+
+          <!-- Library drop zone -->
+          <div id="lib-drop-zone" class="lib-drop-zone">
+            <span id="lib-drop-label">Drop .js library files here or click to browse</span>
+            <div style="font-size:10px;opacity:0.6;margin-top:4px">.js files only (e.g. QCSdk.js, myLib.js)</div>
+            <input id="lib-file-input" type="file" multiple style="display:none" accept=".js,.mjs" />
+          </div>
+          <div id="lib-drop-warning" style="display:none;font-size:11px;color:var(--clr-error,#e05252);margin-top:2px"></div>
+
+          <!-- Loaded library list -->
+          <div id="lib-list" style="margin-top:8px"></div>
         </div>
 
         <!-- ── Section: Validation ──────────────────────────────────────── -->
@@ -300,7 +409,7 @@
             </button>
 
             <button class="btn btn-secondary"
-              onclick="if(window._wrapper){window._wrapper.registerSuggestions(window._wrapper.getLanguage(),[{label:'demoSuggest',detail:'Demo custom suggestion',insertText:'demoSuggest()',kind:'function'}]);alert('Custom suggestion registered! Type \"demo\" in the editor.');}">
+              onclick="if(window._wrapper){window._wrapper.registerSuggestions(window._wrapper.getLanguage(),[{label:'demoSuggest',detail:'Demo custom suggestion',insertText:'demoSuggest()',kind:'function'}]);alert('Custom suggestion registered! Type \'demo\' in the editor.');}">
               Add Demo Suggestion
             </button>
 
@@ -381,9 +490,10 @@
     // Monaco is now available as window.monaco
 
     // Helper: load a script tag and call cb when done
+    var _bustCache = Date.now();
     function loadScript(src, cb) {
       var s    = document.createElement('script');
-      s.src    = src;
+      s.src    = src + '?v=' + _bustCache;
       s.async  = false;
       s.onload = cb || function () {};
       s.onerror = function () { console.error('[loader] Failed to load script:', src); };
@@ -395,10 +505,28 @@
       '../src/constants.js',
       '../src/ThemeManager.js',
       '../src/SuggestionManager.js',
+      '../src/SuggestionGenerator.js',
+      '../src/analyzers/JSAnalyzer.js',
+      '../src/analyzers/TSAnalyzer.js',
+      '../src/analyzers/JSONAnalyzer.js',
+      '../src/analyzers/CSSAnalyzer.js',
+      '../src/analyzers/SQLAnalyzer.js',
+      '../src/analyzers/YAMLAnalyzer.js',
+      '../src/analyzers/AnalyzerEngine.js',
+      '../src/analyzers/DtsGenerator.js',
+      '../src/SuggestionMapper.js',
+      '../src/SuggestionMerger.js',
+      '../src/ExtraLibManager.js',
+      '../src/LibraryProviderManager.js',
       '../src/ValidationManager.js',
       '../src/KeybindingManager.js',
       '../src/ToolbarManager.js',
+      '../src/FileSystemManager.js',
+      '../src/ModelManager.js',
+      '../src/TabBar.js',
+      '../src/FilePanel.js',
       '../src/MonacoWrapper.js',
+      'LivePreviewModal.js',
       'demo.js'
     ];
 

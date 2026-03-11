@@ -142,6 +142,13 @@ ToolbarManager.prototype._createButtonEl = function (config, onClick) {
   btn.innerHTML = iconHtml + '<span class="mw-btn-label">' +
     this._escapeHtml(config.label) + '</span>' + labelHtml;
 
+  // mousedown fires before the editor loses focus; preventDefault here
+  // stops the button from stealing focus away from the editor, which is
+  // critical for undo/redo (and all other trigger-based actions) to work.
+  btn.addEventListener('mousedown', function (e) {
+    e.preventDefault();
+  });
+
   btn.addEventListener('click', function (e) {
     e.preventDefault();
     onClick();

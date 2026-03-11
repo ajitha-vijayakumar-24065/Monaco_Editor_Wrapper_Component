@@ -227,3 +227,61 @@ var COMPLETION_KIND_MAP = {
   typeParameter: 24,
   snippet:       25
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// File View defaults
+// ─────────────────────────────────────────────────────────────────────────────
+
+var DEFAULT_FILE_VIEW_CONFIG = {
+  viewMode: 'tree',   // 'tree' | 'card'
+  visible: true
+};
+
+var LANG_FILE_ICONS = {
+  javascript: '🟨',
+  typescript: '🔷',
+  json:       '📋',
+  sql:        '🗄️',
+  python:     '🐍',
+  html:       '🌐',
+  css:        '🎨',
+  yaml:       '⚙️',
+  markdown:   '📝',
+  plaintext:  '📄'
+};
+
+var DEFAULT_FILE_CONTENT = {
+  javascript: '// New file\n',
+  typescript: '// New file\n',
+  json:       '{\n  \n}\n',
+  sql:        '-- New query\n',
+  python:     '# New file\n',
+  html:       '<!DOCTYPE html>\n<html>\n<head></head>\n<body>\n\n</body>\n</html>\n',
+  css:        '/* New stylesheet */\n',
+  yaml:       '# New config\n',
+  markdown:   '# New document\n',
+  plaintext:  ''
+};
+
+var FILE_EXT_TO_LANGUAGE = {
+  js:       'javascript',
+  mjs:      'javascript',
+  cjs:      'javascript',
+  jsx:      'javascript',
+  ts:       'typescript',
+  tsx:      'typescript',
+  json:     'json',
+  css:      'css',
+  scss:     'css',
+  less:     'css',
+  html:     'html',
+  htm:      'html',
+  sql:      'sql',
+  py:       'python',
+  yaml:     'yaml',
+  yml:      'yaml',
+  env:      'yaml',
+  md:       'markdown',
+  markdown: 'markdown',
+  txt:      'plaintext'
+};

@@ -1,0 +1,272 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   live-preview.css  —  Live Preview Modal
+   Uses CSS custom properties defined in demo.css (--clr-*, --radius, etc.)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Overlay ─────────────────────────────────────────────────────────────── */
+.lp-overlay {
+  display: none;             /* toggled to flex on open */
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.lp-overlay--open {
+  opacity: 1;
+}
+
+/* ── Modal shell ─────────────────────────────────────────────────────────── */
+.lp-modal {
+  display: flex;
+  flex-direction: column;
+  width: 94vw;
+  height: 90vh;
+  max-width: 1600px;
+  background: var(--clr-surface, #ffffff);
+  border-radius: var(--radius, 6px);
+  box-shadow: 0 24px 72px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  transform: scale(0.97);
+  transition: transform 200ms ease;
+}
+
+.lp-overlay--open .lp-modal {
+  transform: scale(1);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.lp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--clr-topbar, #1e293b);
+  color: var(--clr-topbar-text, #f1f5f9);
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.lp-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.lp-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Modal buttons ───────────────────────────────────────────────────────── */
+.lp-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-family: var(--font-ui, -apple-system, sans-serif);
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 120ms ease, border-color 120ms ease;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.lp-btn--primary {
+  background: var(--clr-primary, #2563eb);
+  color: #fff;
+  border-color: var(--clr-primary, #2563eb);
+}
+.lp-btn--primary:hover  { background: var(--clr-primary-h, #1d4ed8); }
+.lp-btn--primary:active { opacity: 0.85; }
+
+.lp-btn--secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--clr-topbar-text, #f1f5f9);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.lp-btn--secondary:hover  { background: rgba(255, 255, 255, 0.2); }
+.lp-btn--secondary:active { opacity: 0.75; }
+
+.lp-btn--close {
+  background: transparent;
+  color: var(--clr-topbar-text, #f1f5f9);
+  border-color: rgba(255, 255, 255, 0.15);
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+}
+.lp-btn--close:hover  { background: rgba(255, 255, 255, 0.15); }
+
+/* ── File tab bar ────────────────────────────────────────────────────────── */
+.lp-tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 12px;
+  background: var(--clr-surface-alt, #f9fafb);
+  border-bottom: 1px solid var(--clr-border, #d1d5db);
+  overflow-x: auto;
+  flex-shrink: 0;
+  scrollbar-width: thin;
+  min-height: 36px;
+}
+
+.lp-tab {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-family: var(--font-ui, sans-serif);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--clr-text-muted, #64748b);
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 100ms ease, color 100ms ease;
+  flex-shrink: 0;
+}
+
+.lp-tab:hover {
+  background: var(--clr-bg, #f4f5f7);
+  color: var(--clr-text, #1e293b);
+}
+
+.lp-tab--active {
+  background: var(--clr-surface, #fff);
+  border-color: var(--clr-border, #d1d5db);
+  color: var(--clr-primary, #2563eb);
+  font-weight: 500;
+}
+
+.lp-tab--edited::after {
+  content: ' ●';
+  font-size: 8px;
+  color: var(--clr-warn, #f59e0b);
+  vertical-align: middle;
+}
+
+.lp-tab-empty {
+  font-size: 12px;
+  color: var(--clr-text-muted, #64748b);
+  padding: 4px 8px;
+  font-style: italic;
+}
+
+/* ── Two-column body ─────────────────────────────────────────────────────── */
+.lp-columns {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.lp-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.lp-col--config  {
+  flex: 0 0 38%;
+  border-right: 1px solid var(--clr-border, #d1d5db);
+}
+
+.lp-col--preview {
+  flex: 1;
+}
+
+.lp-col-header {
+  padding: 5px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--clr-text-muted, #64748b);
+  background: var(--clr-surface-alt, #f9fafb);
+  border-bottom: 1px solid var(--clr-border, #d1d5db);
+  flex-shrink: 0;
+}
+
+.lp-editor-container {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Status bar ──────────────────────────────────────────────────────────── */
+.lp-status-bar {
+  padding: 4px 14px;
+  font-size: 11px;
+  font-family: var(--font-ui, sans-serif);
+  background: var(--clr-surface-alt, #f9fafb);
+  border-top: 1px solid var(--clr-border, #d1d5db);
+  flex-shrink: 0;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+}
+
+.lp-status-ready { color: var(--clr-text-muted, #64748b); }
+.lp-status-ok    { color: var(--clr-success,    #10b981); font-weight: 500; }
+.lp-status-warn  { color: var(--clr-warn,        #f59e0b); font-weight: 500; }
+.lp-status-error { color: var(--clr-error,        #ef4444); font-weight: 500; }
+
+/* ── Dark mode overrides ─────────────────────────────────────────────────── */
+body.dark-ui .lp-tab--active {
+  background: var(--clr-surface, #1e293b);
+  border-color: var(--clr-border, #334155);
+}
+
+body.dark-ui .lp-tab-bar {
+  background: var(--clr-surface-alt, #263349);
+}
+
+/* ── Responsive: small screens (≤ 768 px) ───────────────────────────────── */
+@media (max-width: 768px) {
+  .lp-modal {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    border-radius: 0;
+  }
+
+  .lp-columns {
+    flex-direction: column;
+  }
+
+  .lp-col--config {
+    flex: 0 0 45%;
+    border-right: none;
+    border-bottom: 1px solid var(--clr-border, #d1d5db);
+  }
+
+  .lp-col--preview {
+    flex: 0 0 55%;
+  }
+
+  .lp-header-actions {
+    gap: 4px;
+  }
+
+  .lp-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .lp-tab-bar {
+    padding: 4px 8px;
+  }
+}

@@ -20,6 +20,7 @@ function SuggestionManager(monacoRef, emitCallback) {
   this._monaco    = monacoRef;
   this._emit      = emitCallback;
   this._providers = {}; // languageId → IDisposable
+  this._cache     = {}; // languageId → raw suggestions array
 }
 
 /**
@@ -127,7 +128,24 @@ SuggestionManager.prototype.registerSuggestions = function (language, suggestion
   });
 
   this._providers[language] = disposable;
+  this._cache[language]    = suggestions.slice(); // store raw copy
   this._emit('onSuggestionsRegistered', language);
+};
+
+/**
+ * Return the raw suggestions array currently registered for a language.
+ * @param {string} [language]  If omitted, returns all cached suggestions (flat array)
+ * @returns {Array}
+ */
+SuggestionManager.prototype.getSuggestions = function (language) {
+  if (language) return this._cache[language] ? this._cache[language].slice() : [];
+  // Return all cached items across all languages
+  var all = [];
+  var langs = Object.keys(this._cache);
+  for (var i = 0; i < langs.length; i++) {
+    all = all.concat(this._cache[langs[i]]);
+  }
+  return all;
 };
 
 /**
@@ -139,6 +157,7 @@ SuggestionManager.prototype.clearSuggestions = function (language) {
     this._providers[language].dispose();
     delete this._providers[language];
   }
+  delete this._cache[language];
 };
 
 /**
@@ -150,4 +169,5 @@ SuggestionManager.prototype.dispose = function () {
     this._providers[languages[i]].dispose();
   }
   this._providers = {};
+  this._cache     = {};
 };
